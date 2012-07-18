@@ -9,3 +9,6 @@ It contains sample OOP modules for HostBill
  + Payment: Sample gateway (class.paymentsample.php)
  + Payment: Sample merchant gateway (class.merchantsample.php)
  + Notification: Clickatell SMS (class.clickatell_sms.php)
+
+## Sample client functions (widgets) for hosting modules:
+ + Widget: RebootSample (widget.rebootsample.php)
