@@ -53,6 +53,9 @@ class MerchantSample extends CreditCardModule {
      * @param array $ccdetails An array with credit card details, contains following keys:
      * $ccdetails['cardnum'] - credit card number
      * $ccdetails['expdate'] - expiration date in format MMYY - i.e. 1112
+     * $ccdetails['cardtype'] - CC type, ie. 'Visa'
+     * If CVV is passed it will be available under:
+     * $ccdetails['cvv']
      * @return boolean True if card was charged
      */
     public function capture($ccdetails) {
@@ -72,7 +75,7 @@ class MerchantSample extends CreditCardModule {
         $options['x_country'] = $this->client['country'];
         $options['x_phone'] = $this->client['phonenumber'];
         $options['x_email'] = $this->client['email'];
-        $options['x_cust_id'] = $this->client['id'];
+        $options['x_cust_id'] = $this->client['client_id'];
 
 
         /* ORDER INFORMATION */
@@ -80,14 +83,16 @@ class MerchantSample extends CreditCardModule {
         $options['x_description'] = $this->subject;
         $options['x_amount'] = $this->amount;
 
-        $options['x_version'] = '3.1';
 
 
 
         /* CREDIT CARD INFORMATION */
         $options['x_card_num'] = $ccdetails['cardnum'];
         $options['x_exp_date'] = $ccdetails['expdate'];    //MMYY
-        $options['x_card_code'] = $ccdetails['cvv'];
+         if($ccdetails['cvv']) {
+           //this is manual payment, client passed cvv code
+          $options['x_card_code'] = $ccdetails['cvv'];
+        }
 
 
         //
@@ -106,11 +111,11 @@ class MerchantSample extends CreditCardModule {
 
 
                 $this->addTransaction(array(
-                    'client_id' => $response['Customer ID'],
-                    'invoice_id' => $response['Invoice Number'],
-                    'description' => $response['Description'],
+                    'client_id' => $this->client['client_id'],
+                    'invoice_id' => $this->invoice_id,
+                    'description' => "Payment for invoice ".$this->invoice_id,
                     'number' => $response['Transaction ID'],
-                    'in' => $inAmount,
+                    'in' => $this->amount,
                     'fee' => '0'
                 ));
                 return true;
@@ -127,21 +132,13 @@ class MerchantSample extends CreditCardModule {
 
                 break;
 
-            case 3:
-
-                $this->logActivity(array(
-                    'output' => $response,
-                    'result' => PaymentModule::PAYMENT_PENDING
-                ));
-
-                return false;
-
-                break;
+         
         }
     }
 
     /**
      * This OPTIONAL helper function can be called from capture method,
+     * i.e. connect to gateway API using CURL
      */
     private function processData($options) {
         //send data to cc processor, parse response
