@@ -57,6 +57,25 @@ class Merchant_Token_Sample extends TokenPaymentModule {
     );
 
     /**
+     * Client choose to remove his credit card, or enter new card.
+     * Old token should be remotely deleted - if method below is available it will be called
+     * before entering new card details
+     *
+     * @param array $ccdetails Old credit card details
+     * $ccdetails['token'] - token to remove
+     */
+    public function token_delete($ccdetails) {
+
+        $options=array();
+        $options['x_login'] = $this->configuration['API Login']['value'];
+        $options['x_tran_key'] = $this->configuration['Transaction Key']['value'];
+        $options['x_card_token'] = $ccdetails['token'];
+        $options['x_action'] = 'Remove Token';
+
+         $this->processData($options);
+    }
+
+    /**
      *  HostBill will call this method to attempt to charge/capture payment from credit card
      *
      * @param array $ccdetails An array with credit card details, contains following keys:
@@ -65,11 +84,15 @@ class Merchant_Token_Sample extends TokenPaymentModule {
      * $ccdetails['cardtype'] - CC type, ie. 'Visa'
      * If CVV is passed it will be available under:
      * $ccdetails['cvv']
+     *
+     * If card already been tokenized cardnum will consist only last 4 digits, and new element
+     * $ccdetails['token'] - token to capture payment from
+     * 
      * @return boolean True if card was charged
      */
-    public function capture($ccdetails) {
+    public function capture_token($ccdetails) {
 
-
+        $options=array();
         $options['x_login'] = $this->configuration['API Login']['value'];
         $options['x_tran_key'] = $this->configuration['Transaction Key']['value'];
 
@@ -93,12 +116,10 @@ class Merchant_Token_Sample extends TokenPaymentModule {
         $options['x_amount'] = $this->amount;
 
 
-
-
         /* CREDIT CARD INFORMATION */
-        // we have token available, use it against registrar
+        // we have token available, use it against payment gateway
         if ($ccdetails['token']) {
-            $options['x_card_token'] = $ccdetails['cardnum'];
+            $options['x_card_token'] = $ccdetails['token'];
         } else {
            $options['x_card_num'] = $ccdetails['cardnum'];
             $options['x_exp_date'] = $ccdetails['expdate'];    //MMYY
@@ -109,9 +130,6 @@ class Merchant_Token_Sample extends TokenPaymentModule {
         }
 
 
-        
-
-
         //
         //SEND details to your credit card processor to validate and attempt to charge
         //
@@ -120,13 +138,10 @@ class Merchant_Token_Sample extends TokenPaymentModule {
         switch ($response['code']) {
             case 1:
                 //charge succeeded, add transaction and log it
-
                 $this->logActivity(array(
                     'output' => $response,
                     'result' => PaymentModule::PAYMENT_SUCCESS
                 ));
-
-
                 $this->addTransaction(array(
                     'client_id' => $this->client['client_id'],
                     'invoice_id' => $this->invoice_id,
@@ -136,16 +151,15 @@ class Merchant_Token_Sample extends TokenPaymentModule {
                     'fee' => '0'
                 ));
 
-                if($response['Token']) {
+                //Store token only if client allowed to - $ccetails['store']==true
+                if($response['Token'] && $ccdetails['store']) {
                     return $response['Token'];  //return token to be stored
                 } else {
                    return true; //capture success
                 }
-
                 break;
 
             case 2:
-
                 $this->logActivity(array(
                     'output' => $response,
                     'result' => PaymentModule::PAYMENT_FAILURE
@@ -153,8 +167,6 @@ class Merchant_Token_Sample extends TokenPaymentModule {
                 return false;
 
                 break;
-
-         
         }
     }
 
