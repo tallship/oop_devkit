@@ -7,6 +7,7 @@
  * should begin with related hosting module name.
  * i.e.: Additional ip addon for cpanel to be found in : /includes/modules/Hosting/cpanel/class.cpanel_add_ip.php
  *
+ * @see http://dev.hostbillapp.com/dev-kit/provisioning-modules/provisioning-addon-modules/
  * @author HostBill
  */
 class AdvancedExample_Addon extends ModuleAddon {
