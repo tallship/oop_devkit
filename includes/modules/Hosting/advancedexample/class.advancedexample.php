@@ -271,9 +271,11 @@
 
     /**
      * This method is OPTIONAL. in this example it is used to connect to the server and manage all the modules action with the API.
+     * 
+     * Its public, because we can call it from addon class
      *  @ignore
      */
-    private function Send($action, $post) {
+    public function Send($action, $post) {
 
         $post = 'adminusername='.$this->server_username.'&adminpassword='.$this->server_password;
         $post .= $post;
